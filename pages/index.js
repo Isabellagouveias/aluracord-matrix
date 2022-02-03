@@ -1,227 +1,217 @@
-import { Box, Button, Text, TextField, Image } from "@skynexui/components";
-import { useRouter } from "next/router";
-import { useEffect, useState } from "react";
-import appConfig from "../config.json";
+import { Box, Text, TextField, Image, Button } from '@skynexui/components';
+import React from 'react';
+import appConfig from '../config.json';
+import { createClient } from '@supabase/supabase-js'
 
-function Titulo(props) {
-  const Tag = props.tag || "h1";
+// Como fazer AJAX: https://medium.com/@omariosouto/entendendo-como-fazer-ajax-com-a-fetchapi-977ff20da3c6
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlhdCI6MTY0MDg2OTA3MywiZXhwIjoxOTU2NDQ1MDczfQ.343ibq7UYFPDdyfsfGmEqUma01RW7P7KC9U2MDAGSkI';
+const SUPABASE_URL = 'https://kysxypdmtxjlkdysdlas.supabase.co';
+const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-  return (
-    <>
-      <Tag>{props.children}</Tag>
-      <style jsx>{`
-        ${Tag} {
-          color: ${appConfig.theme.colors.primary["900"]};
-          font-size: 24px;
-          font-weight: 600;
-        }
-      `}</style>
-    </>
-  );
-}
 
-export default function PaginaInicial() {
-  const [github, setGithub] = useState("");
-  const [username, setUsername] = useState("");
-  const root = useRouter();
-  const image = "https://avatars.githubusercontent.com/u/46856822?v=4";
+export default function ChatPage() {
+  const [mensagem, setMensagem] = React.useState('');
+  const [listaDeMensagens, setListaDeMensagens] = React.useState([]);
 
-  useEffect(() => {
-    fetch(`https://api.github.com/users/${username}`)
-      .then((response) => {
-        return response.json();
-      })
-      .then((result) => {
-        setGithub(result);
-      })
-      .catch((err) => {
-        console.log(err.message);
+  React.useEffect(() => {
+    supabaseClient
+      .from('mensagens')
+      .select('*')
+      .order('id', { ascending: false })
+      .then(({ data }) => {
+        console.log('Dados da consulta:', data);
+        setListaDeMensagens(data);
       });
-  }, [username]);
+  }, []);
+
+  function handleNovaMensagem(novaMensagem) {
+    const mensagem = {
+      // id: listaDeMensagens.length + 1,
+      de: 'vanessametonini',
+      texto: novaMensagem,
+    };
+
+    supabaseClient
+      .from('mensagens')
+      .insert([
+        // Tem que ser um objeto com os MESMOS CAMPOS que você escreveu no supabase
+        mensagem
+      ])
+      .then(({ data }) => {
+        console.log('Criando mensagem: ', data);
+        setListaDeMensagens([
+          data[0],
+          ...listaDeMensagens,
+        ]);
+      });
+
+    setMensagem('');
+  }
 
   return (
-    <>
+    <Box
+      styleSheet={{
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        backgroundColor: appConfig.theme.colors.primary[500],
+        backgroundImage: `url(https://virtualbackgrounds.site/wp-content/uploads/2020/08/the-matrix-digital-rain.jpg)`,
+        backgroundRepeat: 'no-repeat', backgroundSize: 'cover', backgroundBlendMode: 'multiply',
+        color: appConfig.theme.colors.neutrals['000']
+      }}
+    >
       <Box
         styleSheet={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          backgroundColor: appConfig.theme.colors.neutrals["300"],
-          backgroundImage: "url(https://wallpapercave.com/wp/wp8393404.jpg)",
-          backgroundRepeat: "no-repeat",
-          backgroundSize: "cover",
-          backgroundBlendMode: "multiply",
+          display: 'flex',
+          flexDirection: 'column',
+          flex: 1,
+          boxShadow: '0 2px 10px 0 rgb(0 0 0 / 20%)',
+          borderRadius: '5px',
+          backgroundColor: appConfig.theme.colors.neutrals[700],
+          height: '100%',
+          maxWidth: '95%',
+          maxHeight: '95vh',
+          padding: '32px',
         }}
       >
+        <Header />
         <Box
           styleSheet={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            flexDirection: {
-              xs: "column",
-              sm: "row",
-            },
-            width: "100%",
-            maxWidth: "700px",
-            padding: "32px",
-            margin: "16px",
-            backgroundColor: "rgba(0, 0, 0, 0.63)",
-            border: "1px solid rgba(0, 0, 0, 0.88)",
-            borderColor: appConfig.theme.colors.neutrals[999],
-            borderRadius: "16px",
+            position: 'relative',
+            display: 'flex',
             flex: 1,
-            minHeight: "240px",
-            boxShadow: "0 4px 30px rgba(0, 0, 0, 0.1)",
-            backdropFilter: "blur(2.6px)",
-            webkitBackdropFilter: "blur(2.6px)",
+            height: '80%',
+            backgroundColor: appConfig.theme.colors.neutrals[600],
+            flexDirection: 'column',
+            borderRadius: '5px',
+            padding: '16px',
           }}
         >
-          {/* Formulário */}
+          <MessageList mensagens={listaDeMensagens} />
+          {/* {listaDeMensagens.map((mensagemAtual) => {
+                        return (
+                            <li key={mensagemAtual.id}>
+                                {mensagemAtual.de}: {mensagemAtual.texto}
+                            </li>
+                        )
+                    })} */}
           <Box
             as="form"
-            onSubmit={function (event) {
-              event.preventDefault();
-              root.push(`/chat?username=${username}`);
-            }}
             styleSheet={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "center",
-              width: { xs: "100%", sm: "50%" },
-              textAlign: "center",
-              marginBottom: "32px",
+              display: 'flex',
+              alignItems: 'center',
             }}
           >
-            <Titulo tag="h2">Bem vindo a Grand Line!</Titulo>
-            <Text
-              variant="body3"
-              styleSheet={{
-                marginBottom: "32px",
-                color: appConfig.theme.colors.neutrals["050"],
-                fontWeight: "bold",
-              }}
-            >
-              {appConfig.name}
-            </Text>
             <TextField
-              required
-              placeholder="Informe seu usuário do Github"
-              value={username}
-              onChange={function (event) {
+              value={mensagem}
+              onChange={(event) => {
                 const valor = event.target.value;
-                setUsername(valor);
+                setMensagem(valor);
               }}
-              fullWidth
-              textFieldColors={{
-                neutral: {
-                  textColor: appConfig.theme.colors.neutrals[200],
-                  mainColor: appConfig.theme.colors.neutrals[900],
-                  mainColorHighlight: appConfig.theme.colors.primary[500],
-                  backgroundColor: appConfig.theme.colors.neutrals[800],
-                },
+              onKeyPress={(event) => {
+                if (event.key === 'Enter') {
+                  event.preventDefault();
+                  handleNovaMensagem(mensagem);
+                }
               }}
-            />
-            <Button
-              type="submit"
-              label="Entrar"
-              fullWidth
-              buttonColors={{
-                contrastColor: appConfig.theme.colors.neutrals["000"],
-                mainColor: appConfig.theme.colors.primary[500],
-                mainColorLight: appConfig.theme.colors.primary[400],
-                mainColorStrong: appConfig.theme.colors.primary[600],
-              }}
-            />
-          </Box>
-          {/* Formulário */}
-
-          {/* Photo Area */}
-          <Box
-            styleSheet={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              maxWidth: "200px",
-              padding: "16px",
-              backgroundColor: "rgba(0, 0, 0, 0.23)",
-              border: "1px solid rgba(0, 0, 0, 0.88)",
-              borderColor: appConfig.theme.colors.neutrals[999],
-              borderRadius: "16px",
-              flex: 1,
-              minHeight: "240px",
-              boxShadow: "0 4px 30px rgba(0, 0, 0, 0.1)",
-              backdropFilter: "blur(4.7px)",
-              webkitBackdropFilter: "blur(4.7px)",
-            }}
-          >
-            <Image
+              placeholder="Insira sua mensagem aqui..."
+              type="textarea"
               styleSheet={{
-                borderRadius: "50%",
-                marginBottom: "16px",
-              }}
-              src={
-                username.length > 2
-                  ? `https://github.com/${username}.png`
-                  : image
-              }
-            />
-            <Text
-              variant="body4"
-              styleSheet={{
+                width: '100%',
+                border: '0',
+                resize: 'none',
+                borderRadius: '5px',
+                padding: '6px 8px',
+                backgroundColor: appConfig.theme.colors.neutrals[800],
+                marginRight: '12px',
                 color: appConfig.theme.colors.neutrals[200],
-                backgroundColor: appConfig.theme.colors.neutrals[900],
-                padding: "3px 10px",
-                borderRadius: "10px",
               }}
-            >
-              {username.length > 2 ? (
-                <Text
-                  tag="a"
-                  href={`https://github.com/${username}`}
-                  target="_blank"
-                  styleSheet={{
-                    color: appConfig.theme.colors.neutrals[200],
-                    fontSize: "12px",
-                    textDecoration: "none",
-                    hover: {
-                      color: appConfig.theme.colors.primary[500],
-                    },
-                  }}
-                >
-                  {github.name}
-                </Text>
-              ) : (
-                ""
-              )}
-            </Text>
-            <Text
-              variant="body4"
-              styleSheet={{
-                color: appConfig.theme.colors.neutrals["200"],
-                padding: "3px 10px",
-                borderRadius: "1000px",
-                marginTop: "8px",
-              }}
-            >
-              {username.length > 2 ? github.location : ""}
-            </Text>
-            <Text
-              variant="body4"
-              styleSheet={{
-                color: appConfig.theme.colors.neutrals["200"],
-                padding: "3px 10px",
-                borderRadius: "1000px",
-                marginTop: "8px",
-              }}
-            >
-              {username.length > 2 ? `Followers: ${github.followers}` : ""}
-            </Text>
+            />
           </Box>
-          {/* Photo Area */}
         </Box>
       </Box>
-    </>
-  );
+    </Box>
+  )
 }
+
+function Header() {
+  return (
+    <>
+      <Box styleSheet={{ width: '100%', marginBottom: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }} >
+        <Text variant='heading5'>
+          Chat
+        </Text>
+        <Button
+          variant='tertiary'
+          colorVariant='neutral'
+          label='Logout'
+          href="/"
+        />
+      </Box>
+    </>
+  )
+}
+
+function MessageList(props) {
+  console.log(props);
+  return (
+    <Box
+      tag="ul"
+      styleSheet={{
+        overflow: 'scroll',
+        display: 'flex',
+        flexDirection: 'column-reverse',
+        flex: 1,
+        color: appConfig.theme.colors.neutrals["000"],
+        marginBottom: '16px',
+      }}
+    >
+      {props.mensagens.map((mensagem) => {
+        return (
+          <Text
+            key={mensagem.id}
+            tag="li"
+            styleSheet={{
+              borderRadius: '5px',
+              padding: '6px',
+              marginBottom: '12px',
+              hover: {
+                backgroundColor: appConfig.theme.colors.neutrals[700],
+              }
+            }}
+          >
+            <Box
+              styleSheet={{
+                marginBottom: '8px',
+              }}
+            >
+              <Image
+                styleSheet={{
+                  width: '20px',
+                  height: '20px',
+                  borderRadius: '50%',
+                  display: 'inline-block',
+                  marginRight: '8px',
+                }}
+                src={`https://github.com/${mensagem.de}.png`}
+              />
+              <Text tag="strong">
+                {mensagem.de}
+              </Text>
+              <Text
+                styleSheet={{
+                  fontSize: '10px',
+                  marginLeft: '8px',
+                  color: appConfig.theme.colors.neutrals[300],
+                }}
+                tag="span"
+              >
+                {(new Date().toLocaleDateString())}
+              </Text>
+            </Box>
+            {mensagem.texto}
+          </Text>
+        );
+      })}
+    </Box>
+  )
+}
+

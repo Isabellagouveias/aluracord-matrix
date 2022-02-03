@@ -1,85 +1,61 @@
-import {
-    Box,
-    Text,
-    TextField,
-    Image,
-    Button,
-    Icon,
-} from "@skynexui/components";
-import React, { useEffect, useState } from "react";
-import { Bars } from "react-loading-icons";
-import { createClient } from "@supabase/supabase-js";
-import { useRouter } from "next/router";
+import { Box, Text, TextField, Image, Button } from '@skynexui/components';
+import React from 'react';
+import appConfig from '../config.json';
+import { createClient } from '@supabase/supabase-js'
 
-import appConfig from "../config.json";
-import { ButtonSendSticker } from "../src/components/ButtonSendSticker";
-
-const SUPABASE_ANON_KEY =
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlhdCI6MTY0MzQxODY2MywiZXhwIjoxOTU4OTk0NjYzfQ.6zbGZhmdGLLD7HMQkXVecSfOmMZVQOF92qv0aYp6TZw";
-const SUPABASE_URL = "https://egyyqmydgzrkncfpijid.supabase.co";
+// Como fazer AJAX: https://medium.com/@omariosouto/entendendo-como-fazer-ajax-com-a-fetchapi-977ff20da3c6
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlhdCI6MTY0MDg2OTA3MywiZXhwIjoxOTU2NDQ1MDczfQ.343ibq7UYFPDdyfsfGmEqUma01RW7P7KC9U2MDAGSkI';
+const SUPABASE_URL = 'https://kysxypdmtxjlkdysdlas.supabase.co';
 const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+
 export default function ChatPage() {
-    const root = useRouter();
-    const userLogged = root.query.username;
+    const [mensagem, setMensagem] = React.useState('');
+    const [listaDeMensagens, setListaDeMensagens] = React.useState([]);
 
-    const [message, setMessage] = useState("");
-    const [chat, setChat] = useState([]);
-    const [loading, setLoading] = useState(true);
-
-    function catchMessageRealTime(addMessage) {
-        return supabaseClient
-            .from("messages")
-            .on("INSERT", (data) => {
-                addMessage(data.new);
-            })
-            .subscribe();
-    }
-
-    useEffect(() => {
-        setTimeout(() => {
-            supabaseClient
-                .from("messages")
-                .select("*")
-                .order("id", { ascending: false })
-                .then(({ data }) => {
-                    setChat(data);
-                });
-            setLoading(false);
-
-            catchMessageRealTime((newMessage) => {
-                setChat((actualValue) => {
-                    return [newMessage, ...actualValue];
-                });
+    React.useEffect(() => {
+        supabaseClient
+            .from('mensagens')
+            .select('*')
+            .order('id', { ascending: false })
+            .then(({ data }) => {
+                console.log('Dados da consulta:', data);
+                setListaDeMensagens(data);
             });
-        }, 3000);
     }, []);
 
-    function handleNewMessage(newMessage) {
-        const mess = {
-            from: userLogged,
-            text: newMessage,
+    function handleNovaMensagem(novaMensagem) {
+        const mensagem = {
+            // id: listaDeMensagens.length + 1,
+            de: 'vanessametonini',
+            texto: novaMensagem,
         };
 
         supabaseClient
-            .from("messages")
-            .insert([mess])
-            .then(({ }) => { });
-        setMessage("");
+            .from('mensagens')
+            .insert([
+                // Tem que ser um objeto com os MESMOS CAMPOS que você escreveu no supabase
+                mensagem
+            ])
+            .then(({ data }) => {
+                console.log('Criando mensagem: ', data);
+                setListaDeMensagens([
+                    data[0],
+                    ...listaDeMensagens,
+                ]);
+            });
+
+        setMensagem('');
     }
 
     return (
         <Box
             styleSheet={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
                 backgroundColor: appConfig.theme.colors.primary[500],
-                backgroundImage: "url(https://wallpapercave.com/wp/wp8393404.jpg)",
-                backgroundRepeat: "no-repeat",
-                backgroundSize: "cover",
-                backgroundBlendMode: "multiply",
-                color: appConfig.theme.colors.neutrals["000"],
+                backgroundImage: `url(https://virtualbackgrounds.site/wp-content/uploads/2020/08/the-matrix-digital-rain.jpg)`,
+                backgroundRepeat: 'no-repeat', backgroundSize: 'cover', backgroundBlendMode: 'multiply',
+                color: appConfig.theme.colors.neutrals['000']
             }}
         >
             <Box
